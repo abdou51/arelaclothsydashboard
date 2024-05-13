@@ -107,7 +107,7 @@ export function DataTableRowActions<TData>({
     try {
       setIsLoading(true)
       const response = await axios.delete(
-        `https://api.arelaclothsy.com/${category._id}`
+        `https://api.arelaclothsy.com/categories/${category._id}`
       )
 
       if (response.status === 200) {
