@@ -83,8 +83,6 @@ export default function DeliveryPricing() {
         colors: colorsWithImageIds,
       }
 
-      const token = localStorage.getItem('jwt')
-
       const response = await axios.post(
         'https://api.arelaclothsy.com/products',
         productData,
