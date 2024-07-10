@@ -9,6 +9,7 @@ import DeliveryPricingPage from './pages/deliveryPricing'
 import LoginComponent from './pages/auth/sign-in-2'
 import AppShell from './components/app-shell'
 import CategoriesPage from './pages/categories'
+import Heroes from './pages/heroes'
 
 const router = createBrowserRouter([
   {
@@ -39,6 +40,10 @@ const router = createBrowserRouter([
       {
         path: 'categories',
         element: <CategoriesPage />,
+      },
+      {
+        path: 'heroes',
+        element: <Heroes />,
       },
     ],
   },

@@ -3,6 +3,7 @@ import {
   IconCategory,
   IconCurrencyDollar,
   IconShirt,
+  IconLayoutBottombar,
 } from '@tabler/icons-react'
 
 export interface NavLink {
@@ -38,5 +39,11 @@ export const sidelinks: SideLink[] = [
     label: '',
     href: '/deliverypricing',
     icon: <IconCurrencyDollar size={18} />,
+  },
+  {
+    title: 'Heroes',
+    label: '',
+    href: '/heroes',
+    icon: <IconLayoutBottombar size={18} />,
   },
 ]
