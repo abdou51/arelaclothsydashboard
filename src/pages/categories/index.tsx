@@ -134,14 +134,22 @@ export default function DeliveryPricing() {
 
   const handleSubmit = async () => {
     try {
+      const token = localStorage.getItem('jwt')
+
       const response = await axios.post(
         `https://api.arelaclothsy.com/categories/`,
         {
           engName: categoryEnglishName,
           frName: categoryFrenchName,
           arName: categoryArabicName,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
       )
+
       setCategories([response.data, ...categories])
       toast({
         variant: 'default',

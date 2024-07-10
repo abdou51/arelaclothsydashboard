@@ -51,13 +51,21 @@ export function DataTableRowActions<TData>({
         setOpenDialog(false)
         return
       }
+      const token = localStorage.getItem('jwt')
+
       const response = await axios.put(
         `https://api.arelaclothsy.com/wilayas/${wilaya._id}`,
         {
           deskPrice,
           homePrice,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
       )
+
       console.log('Update successful:', response.data)
       updateWilaya(response.data)
       setOpenDialog(false)

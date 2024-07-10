@@ -42,6 +42,8 @@ export default function DeliveryPricing() {
   const handleSubmit = async () => {
     try {
       setLoading(true)
+      const token = localStorage.getItem('jwt')
+
       const imageUploadPromises = []
       selectedAddColors.forEach((color) => {
         if (color.images && color.images.urls.length > 0) {
@@ -54,6 +56,7 @@ export default function DeliveryPricing() {
             axios.post('https://api.arelaclothsy.com/upload', formData, {
               headers: {
                 'Content-Type': 'multipart/form-data',
+                Authorization: `Bearer ${token}`,
               },
             })
           )
@@ -80,10 +83,18 @@ export default function DeliveryPricing() {
         colors: colorsWithImageIds,
       }
 
+      const token = localStorage.getItem('jwt')
+
       const response = await axios.post(
         'https://api.arelaclothsy.com/products',
-        productData
+        productData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       )
+
       console.log('Product created successfully:', response.data)
       loadProducts()
       setLoading(false)

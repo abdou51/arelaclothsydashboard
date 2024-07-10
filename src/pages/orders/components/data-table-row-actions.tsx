@@ -92,12 +92,20 @@ export function DataTableRowActions<TData>({
         })
         return
       }
+      const token = localStorage.getItem('jwt')
+
       const response = await axios.put(
         `https://api.arelaclothsy.com/orders/${order._id}`,
         {
           status: orderStatus,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
       )
+
       if (response.status !== 200) {
         setIsLoading(false)
         setOpenEditDialog(false)

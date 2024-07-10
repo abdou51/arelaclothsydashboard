@@ -87,12 +87,20 @@ export function DataTableRowActions<TData>({
   const handleDeleteProduct = async () => {
     try {
       setIsLoading(true)
+      const token = localStorage.getItem('jwt')
+
       const response = await axios.put(
         `https://api.arelaclothsy.com/products/${product._id}`,
         {
           isDrafted: true,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
       )
+
       if (response.status !== 200) {
         setIsLoading(false)
         toast({
@@ -146,9 +154,13 @@ export function DataTableRowActions<TData>({
 
           // Proceed with uploading only if there are new files in the form data
           if (formData.has('images')) {
+            const token = localStorage.getItem('jwt')
             imageUploadPromises.push(
               axios.post('https://api.arelaclothsy.com/upload', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' },
+                headers: {
+                  'Content-Type': 'multipart/form-data',
+                  Authorization: `Bearer ${token}`,
+                },
               })
             )
             // Map the original index of this color for use after uploads complete
@@ -195,9 +207,16 @@ export function DataTableRowActions<TData>({
       }
 
       // Send an API request to update the product
+      const token = localStorage.getItem('jwt')
+
       const response = await axios.put(
         `https://api.arelaclothsy.com/products/${product._id}`,
-        productData
+        productData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       )
 
       // Update the product in the parent component
@@ -521,9 +540,6 @@ export function DataTableRowActions<TData>({
                             </>
                           ))}
                         </div>
-                        <DialogFooter>
-                          <Button>Save changes</Button>
-                        </DialogFooter>
                       </DialogContent>
                     </Dialog>
                   ))}

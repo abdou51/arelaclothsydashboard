@@ -68,12 +68,19 @@ export function DataTableRowActions<TData>({
         })
         return
       }
+      const token = localStorage.getItem('jwt')
+
       const response = await axios.put(
         `https://api.arelaclothsy.com/categories/${category._id}`,
         {
           engName: categoryEngName,
           frName: categoryFrName,
           arName: categoryArName,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
       )
       if (response.status !== 200) {
@@ -106,10 +113,16 @@ export function DataTableRowActions<TData>({
   const handleDeleteCategory = async () => {
     try {
       setIsLoading(true)
-      const response = await axios.delete(
-        `https://api.arelaclothsy.com/categories/${category._id}`
-      )
+      const token = localStorage.getItem('jwt')
 
+      const response = await axios.delete(
+        `https://api.arelaclothsy.com/categories/${category._id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      )
       if (response.status === 200) {
         deleteCategory(response.data)
         toast({
