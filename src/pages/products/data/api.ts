@@ -1,4 +1,5 @@
 import { Product, productApiResponseSchema, ProductMetadata } from './schema' // Adjust the import path as necessary
+import { z } from 'zod'
 
 // Define types for the function parameters
 interface FetchProductsParams {
@@ -41,7 +42,11 @@ export async function fetchProducts(params: FetchProductsParams = {}): Promise<{
 
     return { products, metadata }
   } catch (error) {
-    console.error('Error fetching products', error)
-    throw error
+    if (error instanceof z.ZodError) {
+      console.error('Validation error:', error.errors)
+    } else {
+      console.error('Fetch error:', error)
+    }
+    throw error // Re-throw to ensure the calling function handles it
   }
 }

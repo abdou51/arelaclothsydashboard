@@ -4,7 +4,7 @@ import { Layout, LayoutBody, LayoutHeader } from '@/components/custom/layout'
 import { DataTable } from './components/data-table'
 import { fetchProducts } from './data/api'
 import { useState, useEffect } from 'react'
-import { Category, Product, ProductMetadata, Color } from './data/schema'
+import { Category, Product, ProductMetadata } from './data/schema'
 import { ColumnDef } from '@tanstack/react-table'
 import { DataTableColumnHeader } from './components/data-table-column-header'
 import { DataTableRowActions } from './components/data-table-row-actions'
@@ -12,7 +12,6 @@ import { Button } from '@/components/custom/button'
 import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
 import axios from 'axios'
-
 import {
   Dialog,
   DialogContent,
@@ -44,32 +43,23 @@ export default function DeliveryPricing() {
       setLoading(true)
       const token = localStorage.getItem('jwt')
 
-      const imageUploadPromises = []
-      selectedAddColors.forEach((color) => {
-        if (color.images && color.images.urls.length > 0) {
-          const formData = new FormData()
-          color.images.urls.forEach((file) => {
-            formData.append('images', file) // Append file directly
-          })
-
-          imageUploadPromises.push(
-            axios.post('https://api.arelaclothsy.com/upload', formData, {
-              headers: {
-                'Content-Type': 'multipart/form-data',
-                Authorization: `Bearer ${token}`,
-              },
-            })
-          )
-        }
+      const formData = new FormData()
+      selectedAddImages.forEach((file) => {
+        formData.append('images', file) // Append file directly
       })
 
-      const imageResponses = await Promise.all(imageUploadPromises)
-      const imagesWithIds = imageResponses.map((res) => res.data)
+      const imageResponse = await axios.post(
+        'https://api.arelaclothsy.com/upload',
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      )
 
-      const colorsWithImageIds = selectedAddColors.map((color, index) => ({
-        ...color,
-        images: imagesWithIds[index]._id,
-      }))
+      const imagesWithId = imageResponse.data._id
 
       const productData = {
         frName: selectedAddFrName,
@@ -80,7 +70,13 @@ export default function DeliveryPricing() {
         engDescription: selectedAddEnDescription,
         arDescription: selectedAddArDescription,
         category: selectedAddCategory?._id,
-        colors: colorsWithImageIds,
+        images: imagesWithId,
+        sizes: selectedAddSizes,
+        new: selectedAddNew,
+        bestSelling: selectedAddBestSelling,
+        salePrice: selectedAddSalePrice,
+        saleEnds: selectedAddSaleEnds,
+        isSale: promotion,
       }
 
       const response = await axios.post(
@@ -139,29 +135,6 @@ export default function DeliveryPricing() {
       enableSorting: false,
     },
     {
-      accessorKey: 'colors',
-      header: ({ column }) => (
-        <DataTableColumnHeader column={column} title='Colors' />
-      ),
-      cell: ({ row }) => (
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          {row.original.colors.map((color) => (
-            <div
-              key={color.hex}
-              style={{
-                width: '20px',
-                height: '20px',
-                backgroundColor: color.hex,
-                borderRadius: '50%',
-              }}
-              title={color.hex}
-            ></div>
-          ))}
-        </div>
-      ),
-      enableSorting: false,
-    },
-    {
       accessorKey: 'category',
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title='Category' />
@@ -185,22 +158,12 @@ export default function DeliveryPricing() {
       ),
     },
   ]
-  const handleFileUpload = (event, colorHex) => {
+
+  const handleFileUpload = (event) => {
     const files = Array.from(event.target.files)
-    const updatedColors = selectedAddColors.map((color) => {
-      if (color.hex === colorHex) {
-        return {
-          ...color,
-          images: {
-            ...color.images,
-            urls: [...(color.images?.urls ?? []), ...files], // Directly use file objects
-          },
-        }
-      }
-      return color
-    })
-    setSelectedAddColors(updatedColors)
+    setSelectedAddImages(files)
   }
+
   const updateProduct = (updatedProduct: Product) => {
     setProducts((currentProducts) =>
       currentProducts.map((product) =>
@@ -208,22 +171,20 @@ export default function DeliveryPricing() {
       )
     )
   }
+
   const deleteProduct = (deletedProduct: Product) => {
     setProducts((currentProducts) =>
       currentProducts.filter((product) => product._id !== deletedProduct._id)
     )
   }
-  // api functionnality state
+
+  // api functionality state
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   // ui logic state
   const [openDialog, setOpenDialog] = useState(false)
-  const [openColorDialog, setOpenColorDialog] = useState(false)
-  const [openColorDetailsDialog, setOpenColorDetailsDialog] = useState<
-    string | null
-  >(null)
-  const [openCombox, setOpenCombobox] = useState(false)
+  const [openCombobox, setOpenCombobox] = useState(false)
 
   // data api state
   const [products, setProducts] = useState<Product[]>([])
@@ -239,8 +200,15 @@ export default function DeliveryPricing() {
   const [selectedAddFrDescription, setSelectedAddFrDescription] = useState('')
   const [selectedAddEnDescription, setSelectedAddEnDescription] = useState('')
   const [selectedAddArDescription, setSelectedAddArDescription] = useState('')
-  const [selectedAddSingleColor, setSelectedAddSingleColor] = useState('')
-  const [selectedAddColors, setSelectedAddColors] = useState<Color[]>([])
+  const [selectedAddImages, setSelectedAddImages] = useState<File[]>([])
+  const [selectedAddSizes, setSelectedAddSizes] = useState<
+    { size: number; inStock: boolean }[]
+  >([])
+  const [selectedAddNew, setSelectedAddNew] = useState(false)
+  const [promotion, setPromotion] = useState(false)
+  const [selectedAddBestSelling, setSelectedAddBestSelling] = useState(false)
+  const [selectedAddSalePrice, setSelectedAddSalePrice] = useState(0)
+  const [selectedAddSaleEnds, setSelectedAddSaleEnds] = useState('')
 
   const loadCategories = async () => {
     try {
@@ -254,6 +222,12 @@ export default function DeliveryPricing() {
   useEffect(() => {
     loadCategories()
   }, [])
+  useEffect(() => {
+    if (promotion === false) {
+      setSelectedAddSalePrice(0)
+      setSelectedAddSaleEnds('')
+    }
+  }, [promotion])
 
   useEffect(() => {
     if (!openDialog) {
@@ -265,8 +239,13 @@ export default function DeliveryPricing() {
       setSelectedAddFrDescription('')
       setSelectedAddEnDescription('')
       setSelectedAddArDescription('')
-      setSelectedAddSingleColor('')
-      setSelectedAddColors([])
+      setSelectedAddImages([])
+      setSelectedAddSizes([])
+      setSelectedAddNew(false)
+      setSelectedAddBestSelling(false)
+      setSelectedAddSalePrice(0)
+      setSelectedAddSaleEnds('')
+      setPromotion(false)
     }
   }, [openDialog])
 
@@ -289,6 +268,7 @@ export default function DeliveryPricing() {
   useEffect(() => {
     loadProducts()
   }, [])
+
   const handleFetchProducts = async (params: FetchProductsParams) => {
     setLoading(true)
     try {
@@ -302,6 +282,7 @@ export default function DeliveryPricing() {
       setLoading(false)
     }
   }
+
   return (
     <>
       <Layout>
@@ -316,7 +297,7 @@ export default function DeliveryPricing() {
             <div>
               <h2 className='text-2xl font-bold tracking-tight'>Products</h2>
               <p className='text-muted-foreground'>
-                {metadata?.totalDocs} Product(s) Found !
+                {metadata?.totalDocs} Product(s) Found!
               </p>
             </div>
             <div className='flex items-center space-x-2'>
@@ -324,394 +305,22 @@ export default function DeliveryPricing() {
                 <DialogTrigger>
                   <Button>ADD NEW PRODUCT</Button>
                 </DialogTrigger>
-                <DialogContent className='sm:max-h[1200px] sm:max-w-[900px]'>
+                <DialogContent className='max-h-screen overflow-y-scroll lg:max-w-screen-lg'>
                   <DialogHeader>
                     <DialogTitle>Add Product</DialogTitle>
                   </DialogHeader>
                   <div className='grid gap-4 py-4'>
-                    <div className='grid grid-cols-4 items-center gap-4'>
-                      <Label htmlFor='arabicDescription'>Colors</Label>
-                      <div className='col-span-3 flex items-center justify-between'>
-                        <div className='flex gap-6 '>
-                          {selectedAddColors?.map((colorItem) => (
-                            <Dialog
-                              open={openColorDetailsDialog === colorItem.hex} // Dialog opens based on this condition
-                              onOpenChange={() => {
-                                setOpenColorDetailsDialog(
-                                  openColorDetailsDialog === colorItem.hex
-                                    ? null
-                                    : colorItem.hex
-                                )
-                              }} // Toggle open/close based on current state
-                              key={colorItem.hex}
-                            >
-                              <DialogTrigger>
-                                <div
-                                  style={{
-                                    width: '25px',
-                                    height: '25px',
-                                    backgroundColor: colorItem.hex,
-                                    borderRadius: '50%',
-                                    outline: '2px solid ',
-                                  }}
-                                  title={colorItem.hex}
-                                ></div>
-                              </DialogTrigger>
-                              <DialogContent className='sm:max-h[600px] sm:max-w-[600px]'>
-                                <DialogHeader>
-                                  <DialogTitle>Color Details</DialogTitle>
-                                </DialogHeader>
-                                <div className='grid gap-4 py-4'>
-                                  <div className='grid grid-cols-5 items-center gap-4'>
-                                    <Label htmlFor='color'>Chosen Color</Label>
-                                    <div
-                                      className='col-span-3'
-                                      style={{
-                                        width: '25px',
-                                        height: '25px',
-                                        backgroundColor: colorItem.hex,
-                                        borderRadius: '50%',
-                                        outline: '2px solid ',
-                                      }}
-                                      title={colorItem.hex}
-                                    ></div>
-                                    <Button
-                                      onClick={() => {
-                                        setSelectedAddColors(
-                                          selectedAddColors.filter(
-                                            (color) =>
-                                              color.hex !== colorItem.hex
-                                          )
-                                        )
-                                      }}
-                                    >
-                                      Delete
-                                    </Button>
-                                    <Label htmlFor='images'>Images</Label>
-                                    <div className='h-16 w-16 rounded-md border border-indigo-500 bg-gray-50 p-4 shadow-md'>
-                                      <label
-                                        htmlFor='upload'
-                                        className='flex cursor-pointer flex-col items-center gap-2'
-                                      >
-                                        <svg
-                                          xmlns='http://www.w3.org/2000/svg'
-                                          className='h-8 w-8 fill-white stroke-indigo-500'
-                                          viewBox='0 0 24 24'
-                                          stroke='currentColor'
-                                          strokeWidth='2'
-                                        >
-                                          <path
-                                            strokeLinecap='round'
-                                            strokeLinejoin='round'
-                                            d='M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'
-                                          />
-                                        </svg>
-                                      </label>
-
-                                      <input
-                                        id='upload'
-                                        type='file'
-                                        multiple
-                                        className='hidden'
-                                        accept='image/png, image/jpeg'
-                                        onChange={(event) =>
-                                          handleFileUpload(event, colorItem.hex)
-                                        }
-                                      />
-                                    </div>
-                                    <div className='col-span-3 flex  gap-2'>
-                                      {colorItem?.images?.urls?.length || 0}{' '}
-                                      images Selected
-                                    </div>
-                                  </div>
-                                </div>
-
-                                <hr />
-                                <DialogHeader>
-                                  <div className='flex items-center justify-between'>
-                                    <DialogTitle>Size Details</DialogTitle>
-                                    <Button
-                                      onClick={() => {
-                                        // Mapping through existing colors to find the one with the matching hex value
-                                        const updatedColors =
-                                          selectedAddColors.map((color) => {
-                                            if (color.hex === colorItem.hex) {
-                                              // Found the color, now add a new size to its sizes array
-                                              return {
-                                                ...color,
-                                                sizes: [
-                                                  ...color.sizes,
-                                                  {
-                                                    size: 0,
-                                                    inStock: false,
-                                                  },
-                                                ],
-                                              }
-                                            }
-                                            return color // Return unmodified color if not the one we're looking for
-                                          })
-
-                                        // Update the state with the new colors array
-                                        setSelectedAddColors(updatedColors)
-                                        setOpenColorDialog(false)
-                                      }}
-                                    >
-                                      Add New Size
-                                    </Button>
-                                  </div>
-                                </DialogHeader>
-                                <div className='grid gap-4 py-4'>
-                                  {colorItem.sizes?.map((size, index) => (
-                                    <>
-                                      <div className='grid grid-cols-5 items-center gap-4'>
-                                        <Label htmlFor={`size-${index}`}>
-                                          Size {index + 1}
-                                        </Label>
-                                        <Input
-                                          id={`size-${index}`}
-                                          type='number'
-                                          className='col-span-1 dark:file:text-foreground'
-                                          value={size.size || ''} // Handle undefined or null size values gracefully
-                                          onChange={(e) => {
-                                            const newSizeValue = e.target.value
-                                              ? parseInt(e.target.value, 10)
-                                              : null
-                                            const updatedColors =
-                                              selectedAddColors.map((color) => {
-                                                if (
-                                                  color.hex === colorItem.hex
-                                                ) {
-                                                  // Clone the sizes and update the specific size
-                                                  const updatedSizes =
-                                                    color.sizes.map(
-                                                      (s, sIndex) => {
-                                                        if (sIndex === index) {
-                                                          return {
-                                                            ...s,
-                                                            size: newSizeValue,
-                                                          }
-                                                        }
-                                                        return s
-                                                      }
-                                                    )
-                                                  return {
-                                                    ...color,
-                                                    sizes: updatedSizes,
-                                                  }
-                                                }
-                                                return color
-                                              })
-                                            setSelectedAddColors(updatedColors)
-                                          }}
-                                        />
-                                        <div className='col-span-2 flex items-center space-x-2'>
-                                          <Switch
-                                            checked={size.inStock}
-                                            id={`inStock-${index}`}
-                                            onCheckedChange={(e) => {
-                                              const newInStockValue = e
-
-                                              const updatedColors =
-                                                selectedAddColors.map(
-                                                  (color) => {
-                                                    if (
-                                                      color.hex ===
-                                                      colorItem.hex
-                                                    ) {
-                                                      const updatedSizes =
-                                                        color.sizes.map(
-                                                          (s, sIndex) => {
-                                                            if (
-                                                              sIndex === index
-                                                            ) {
-                                                              return {
-                                                                ...s,
-                                                                inStock:
-                                                                  newInStockValue,
-                                                              }
-                                                            }
-                                                            return s
-                                                          }
-                                                        )
-                                                      return {
-                                                        ...color,
-                                                        sizes: updatedSizes,
-                                                      }
-                                                    }
-                                                    return color
-                                                  }
-                                                )
-
-                                              setSelectedAddColors(
-                                                updatedColors
-                                              )
-                                            }}
-                                          />
-
-                                          <label
-                                            htmlFor={`inStock-${index}`}
-                                            className='text-center text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70'
-                                          >
-                                            In Stock
-                                          </label>
-                                        </div>
-
-                                        <Button
-                                          className='h-8 w-8 rounded-sm border-2 border-solid border-red-500 bg-transparent text-red-500 hover:bg-transparent'
-                                          onClick={() => {
-                                            // Create a new array by mapping over the selectedAddColors
-                                            const updatedColors =
-                                              selectedAddColors.map((color) => {
-                                                if (
-                                                  color.hex === colorItem.hex
-                                                ) {
-                                                  // Filter out the size at the specific index
-                                                  const filteredSizes =
-                                                    color.sizes.filter(
-                                                      (_, sIndex) =>
-                                                        sIndex !== index
-                                                    )
-                                                  // Return the color with the updated sizes array
-                                                  return {
-                                                    ...color,
-                                                    sizes: filteredSizes,
-                                                  }
-                                                }
-                                                return color
-                                              })
-
-                                            // Update the state with the new colors array
-                                            setSelectedAddColors(updatedColors)
-                                          }}
-                                        >
-                                          X
-                                        </Button>
-                                      </div>
-
-                                      <Separator></Separator>
-                                    </>
-                                  ))}
-                                </div>
-                              </DialogContent>
-                            </Dialog>
-                          ))}
-                        </div>
-                        <Dialog
-                          open={openColorDialog}
-                          onOpenChange={setOpenColorDialog}
-                        >
-                          <DialogTrigger>
-                            <Button>Add New Color</Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <div className='grid gap-4 py-4'>
-                              <Label htmlFor='color'>Color</Label>
-                              <Input
-                                id='color'
-                                type='color'
-                                className='col-span-3'
-                                value={selectedAddSingleColor}
-                                onChange={(e) =>
-                                  setSelectedAddSingleColor(e.target.value)
-                                }
-                              />
-                            </div>
-                            <DialogFooter>
-                              <Button
-                                onClick={() => {
-                                  setSelectedAddColors([
-                                    ...selectedAddColors,
-                                    {
-                                      hex: selectedAddSingleColor,
-                                      sizes: [],
-                                      images: [],
-                                    },
-                                  ])
-                                  setOpenColorDialog(false)
-                                }}
-                              >
-                                Save changes
-                              </Button>
-                            </DialogFooter>
-                          </DialogContent>
-                        </Dialog>
-                      </div>
-                      <Label htmlFor='englishName'>English Name</Label>
-                      <Input
-                        id='englishName'
-                        value={selectedAddEngName}
-                        onChange={(event) =>
-                          setSelectedAddEngName(event.target.value)
-                        }
-                        className='col-span-3'
-                      />
-                      <Label htmlFor='frenchName'>French Name</Label>
-                      <Input
-                        id='frenchName'
-                        value={selectedAddFrName}
-                        onChange={(event) =>
-                          setSelectedAddFrName(event.target.value)
-                        }
-                        className='col-span-3'
-                      />
-                      <Label htmlFor='arabicName'>Arabic Name</Label>
-                      <Input
-                        id='arabicName'
-                        value={selectedAddArName}
-                        onChange={(event) =>
-                          setSelectedAddArName(event.target.value)
-                        }
-                        className='col-span-3'
-                      />
-                      <Label htmlFor='price'>Price</Label>
-                      <Input
-                        id='price'
-                        value={selectedAddPrice}
-                        onChange={(event) =>
-                          setSelectedAddPrice(Number(event.target.value))
-                        }
-                        className='col-span-3'
-                      />
-                      <Label htmlFor='englishDescription'>
-                        English Description
-                      </Label>
-                      <Textarea
-                        id='englishDescription'
-                        value={selectedAddEnDescription}
-                        onChange={(event) =>
-                          setSelectedAddEnDescription(event.target.value)
-                        }
-                        className='col-span-3'
-                      />
-                      <Label htmlFor='frenchDescription'>
-                        French Description
-                      </Label>
-                      <Textarea
-                        id='frenchDescription'
-                        value={selectedAddFrDescription}
-                        onChange={(event) =>
-                          setSelectedAddFrDescription(event.target.value)
-                        }
-                        className='col-span-3'
-                      />
-                      <Label htmlFor='arabicDescription'>
-                        Arabic Description
-                      </Label>
-                      <Textarea
-                        id='arabicDescription'
-                        value={selectedAddArDescription}
-                        onChange={(event) =>
-                          setSelectedAddArDescription(event.target.value)
-                        }
-                        className='col-span-3'
-                      />
-                      <Label htmlFor='category'>Category</Label>
-                      <Popover open={openCombox} onOpenChange={setOpenCombobox}>
+                    <Label htmlFor='category'>Category</Label>
+                    <div className='col-span-3'>
+                      <Popover
+                        open={openCombobox}
+                        onOpenChange={setOpenCombobox}
+                      >
                         <PopoverTrigger asChild>
                           <Button
                             variant='outline'
                             role='combobox'
-                            aria-expanded={openCombox}
+                            aria-expanded={openCombobox}
                             className='w-[200px] justify-between'
                           >
                             {selectedAddCategory?.engName}
@@ -736,8 +345,194 @@ export default function DeliveryPricing() {
                         </PopoverContent>
                       </Popover>
                     </div>
-                  </div>
+                    <Label htmlFor='englishName'>English Name</Label>
+                    <Input
+                      id='englishName'
+                      value={selectedAddEngName}
+                      onChange={(event) =>
+                        setSelectedAddEngName(event.target.value)
+                      }
+                      className='col-span-3'
+                    />
+                    <Label htmlFor='frenchName'>French Name</Label>
+                    <Input
+                      id='frenchName'
+                      value={selectedAddFrName}
+                      onChange={(event) =>
+                        setSelectedAddFrName(event.target.value)
+                      }
+                      className='col-span-3'
+                    />
+                    <Label htmlFor='arabicName'>Arabic Name</Label>
+                    <Input
+                      id='arabicName'
+                      value={selectedAddArName}
+                      onChange={(event) =>
+                        setSelectedAddArName(event.target.value)
+                      }
+                      className='col-span-3'
+                    />
+                    <Label htmlFor='price'>Price</Label>
+                    <Input
+                      id='price'
+                      value={selectedAddPrice}
+                      onChange={(event) =>
+                        setSelectedAddPrice(Number(event.target.value))
+                      }
+                      className='col-span-3'
+                    />
+                    <Label htmlFor='englishDescription'>
+                      English Description
+                    </Label>
+                    <Textarea
+                      id='englishDescription'
+                      value={selectedAddEnDescription}
+                      onChange={(event) =>
+                        setSelectedAddEnDescription(event.target.value)
+                      }
+                      className='col-span-3'
+                    />
+                    <Label htmlFor='frenchDescription'>
+                      French Description
+                    </Label>
+                    <Textarea
+                      id='frenchDescription'
+                      value={selectedAddFrDescription}
+                      onChange={(event) =>
+                        setSelectedAddFrDescription(event.target.value)
+                      }
+                      className='col-span-3'
+                    />
+                    <Label htmlFor='arabicDescription'>
+                      Arabic Description
+                    </Label>
+                    <Textarea
+                      id='arabicDescription'
+                      value={selectedAddArDescription}
+                      onChange={(event) =>
+                        setSelectedAddArDescription(event.target.value)
+                      }
+                      className='col-span-3'
+                    />
+                    <Label htmlFor='images'>
+                      Images ({selectedAddImages.length} image(s) selected)
+                    </Label>
+                    <Input
+                      id='images'
+                      type='file'
+                      multiple
+                      accept='image/png, image/jpeg'
+                      onChange={handleFileUpload}
+                      className='col-span-3 dark:file:text-foreground'
+                    />
+                    <Label htmlFor='new'>New</Label>
+                    <Switch
+                      id='new'
+                      checked={selectedAddNew}
+                      onCheckedChange={setSelectedAddNew}
+                      className='col-span-3'
+                    />
 
+                    <Label htmlFor='bestSelling'>Best Selling</Label>
+                    <Switch
+                      id='bestSelling'
+                      checked={selectedAddBestSelling}
+                      onCheckedChange={setSelectedAddBestSelling}
+                      className='col-span-3'
+                    />
+                    <Label htmlFor='promotion'>Promotion</Label>
+                    <Switch
+                      id='promotion'
+                      checked={promotion}
+                      onCheckedChange={setPromotion}
+                      className='col-span-3'
+                    />
+                    <Label htmlFor='salePrice'>Sale Price</Label>
+                    <Input
+                      disabled={!promotion}
+                      id='salePrice'
+                      value={selectedAddSalePrice}
+                      onChange={(event) =>
+                        setSelectedAddSalePrice(Number(event.target.value))
+                      }
+                      className='col-span-3'
+                    />
+                    <Label htmlFor='saleEnds'>
+                      Sale Ends ({selectedAddSaleEnds.toLocaleLowerCase()})
+                    </Label>
+                    <Input
+                      disabled={!promotion}
+                      id='saleEnds'
+                      type='date'
+                      value={selectedAddSaleEnds}
+                      onChange={(event) =>
+                        setSelectedAddSaleEnds(event.target.value)
+                      }
+                      className='col-span-3'
+                    />
+                    <div className='col-span-3 flex justify-between'>
+                      <Label htmlFor='sizes'>Sizes</Label>
+                      <Button
+                        onClick={() => {
+                          setSelectedAddSizes([
+                            ...selectedAddSizes,
+                            { size: 0, inStock: false },
+                          ])
+                        }}
+                      >
+                        Add Size
+                      </Button>
+                    </div>
+                    {selectedAddSizes.map((size, index) => (
+                      <div
+                        key={index}
+                        className='col-span-3 grid grid-cols-5 items-center gap-4'
+                      >
+                        <Label htmlFor={`size-${index}`}>
+                          Size {index + 1}
+                        </Label>
+                        <Input
+                          id={`size-${index}`}
+                          type='text'
+                          value={size.size.toString()}
+                          onChange={(e) => {
+                            const newSizeValue = e.target.value
+                            const updatedSizes = selectedAddSizes.map((s, i) =>
+                              i === index ? { ...s, size: newSizeValue } : s
+                            )
+                            setSelectedAddSizes(updatedSizes)
+                          }}
+                        />
+                        <Switch
+                          checked={size.inStock}
+                          id={`inStock-${index}`}
+                          onCheckedChange={(checked) => {
+                            const updatedSizes = selectedAddSizes.map((s, i) =>
+                              i === index ? { ...s, inStock: checked } : s
+                            )
+                            setSelectedAddSizes(updatedSizes)
+                          }}
+                        />
+                        <label
+                          htmlFor={`inStock-${index}`}
+                          className='text-center text-sm font-medium'
+                        >
+                          In Stock
+                        </label>
+                        <Button
+                          className='h-8 w-8 rounded-sm border-2 border-solid border-red-500 bg-transparent text-red-500 hover:bg-transparent'
+                          onClick={() => {
+                            const updatedSizes = selectedAddSizes.filter(
+                              (_, i) => i !== index
+                            )
+                            setSelectedAddSizes(updatedSizes)
+                          }}
+                        >
+                          X
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
                   <DialogFooter>
                     <Button
                       onClick={handleSubmit}
@@ -749,11 +544,12 @@ export default function DeliveryPricing() {
                         !selectedAddEnDescription ||
                         !selectedAddFrDescription ||
                         !selectedAddCategory ||
-                        selectedAddColors.length === 0 ||
+                        selectedAddImages.length === 0 ||
+                        // selectedAddSizes.length === 0 ||
                         loading
                       }
                     >
-                      Create The product
+                      Create The Product
                     </Button>
                   </DialogFooter>
                 </DialogContent>

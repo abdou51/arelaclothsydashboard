@@ -9,7 +9,6 @@ export const orderProductSchema = z.object({
 // Define the type for an order item
 export const orderItemSchema = z.object({
   product: orderProductSchema.nullable(),
-  hex: z.string(),
   size: z.number().default(0),
   quantity: z.number().default(1),
   price: z.number().default(0),

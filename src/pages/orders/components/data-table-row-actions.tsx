@@ -225,7 +225,6 @@ export function DataTableRowActions<TData>({
             <TableHeader>
               <TableRow>
                 <TableHead>Product</TableHead>
-                <TableHead>Color</TableHead>
                 <TableHead>Size</TableHead>
                 <TableHead>Quantity</TableHead>
                 <TableHead>Price</TableHead>
@@ -238,18 +237,6 @@ export function DataTableRowActions<TData>({
                   <TableCell className='font-medium'>
                     {orderItem.product?.engName}
                   </TableCell>
-                  <TableCell>
-                    <div
-                      key={orderItem.hex}
-                      style={{
-                        width: '20px',
-                        height: '20px',
-                        backgroundColor: orderItem.hex,
-                        borderRadius: '50%',
-                      }}
-                      title={orderItem.hex}
-                    ></div>
-                  </TableCell>
                   <TableCell>{orderItem.size}</TableCell>
                   <TableCell>{orderItem.quantity}</TableCell>
                   <TableCell>{orderItem.price} Dzd</TableCell>
@@ -261,13 +248,13 @@ export function DataTableRowActions<TData>({
             </TableBody>
             <TableFooter>
               <TableRow>
-                <TableCell colSpan={5}>Shipping Fees</TableCell>
+                <TableCell colSpan={4}>Shipping Fees</TableCell>
                 <TableCell className='text-right'>
                   {order.shippingPrice} Dzd
                 </TableCell>
               </TableRow>
               <TableRow>
-                <TableCell colSpan={5}>Total</TableCell>
+                <TableCell colSpan={4}>Total</TableCell>
                 <TableCell className='text-right'>{order.total} Dzd</TableCell>
               </TableRow>
             </TableFooter>
