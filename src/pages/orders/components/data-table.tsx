@@ -82,6 +82,32 @@ export function DataTable<TData, TValue>({
     getFacetedUniqueValues: getFacetedUniqueValues(),
   })
 
+  // Define color mappings for light and dark themes
+
+  const darkThemeColors: Record<string, string> = {
+    pending: '#FFA500', // Orange
+    confirmed: '#4CAF50', // Green
+    cancelled: '#FF0000', // Red
+    shipped: '#1E90FF', // Dodger Blue
+    delivered: '#008000', // Dark Green
+    returned: '#800080', // Purple
+  }
+
+  const lightThemeColors: Record<string, string> = {
+    pending: '#FFB84D', // Lighter Orange
+    confirmed: '#81C784', // Lighter Green
+    cancelled: '#E57373', // Lighter Red
+    shipped: '#64B5F6', // Lighter Blue
+    delivered: '#66BB6A', // Lighter Dark Green
+    returned: '#BA68C8', // Lighter Purple
+  }
+
+  // Get the current theme from localStorage
+  const theme = localStorage.getItem('vite-ui-theme') || 'light'
+
+  // Use the appropriate color map based on the theme
+  const statusColorMap = theme === 'dark' ? darkThemeColors : lightThemeColors
+
   return (
     <div className='space-y-4'>
       <DataTableToolbar
@@ -130,21 +156,30 @@ export function DataTable<TData, TValue>({
                 </TableCell>
               </TableRow>
             ) : table.getRowModel().rows.length > 0 ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() ? 'selected' : undefined}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
+              table.getRowModel().rows.map((row) => {
+                // Get the status of the current row
+                const status = row.getValue('status') as string
+
+                // Get the corresponding color for the status
+                const backgroundColor = statusColorMap[status] || 'transparent'
+
+                return (
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() ? 'selected' : undefined}
+                    style={{ backgroundColor }} // Apply the background color
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id} className=''>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                )
+              })
             ) : (
               <TableRow>
                 <TableCell
