@@ -167,6 +167,7 @@ export function DataTableToolbar<TData>({
                       fetchOrders({
                         filter: multiFilter,
                         product: productFilter._id,
+                        status: statusFilter,
                       })
                     }}
                   >
@@ -181,7 +182,7 @@ export function DataTableToolbar<TData>({
                         setProductFilter(product)
                         setOpenProductFilter(false)
                         fetchOrders({
-                          status: status,
+                          status: statusFilter,
                           filter: multiFilter,
                           product: product._id,
                         })
