@@ -3,8 +3,9 @@ import { Button } from '@/components/custom/button'
 import { Input } from '@/components/ui/input'
 import { DataTableViewOptions } from '../components/data-table-view-options'
 import { OrderMetaData } from '../data/schema'
-import { useState } from 'react'
-
+import { useState, useEffect } from 'react'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import axios from 'axios'
 import { FetchOrdersParams } from '../data/api'
 import { Command, CommandGroup, CommandItem } from '@/components/ui/command'
 import {
@@ -16,9 +17,11 @@ import {
 interface DataTableToolbarProps<TData> {
   table: Table<TData>
   setStatusFilter: (status: string) => void
+  setProductFilter: (status: string) => void
+  setMultiFilter: (multiFilter: string) => void
   statusFilter: string
   multiFilter: string
-  setMultiFilter: (multiFilter: string) => void
+  productFilter: object
   fetchOrders: (
     params: FetchOrdersParams
   ) => Promise<{ orders: TData[]; metadata: OrderMetaData }>
@@ -31,6 +34,8 @@ export function DataTableToolbar<TData>({
   setStatusFilter,
   multiFilter,
   setMultiFilter,
+  productFilter,
+  setProductFilter,
 }: DataTableToolbarProps<TData>) {
   // Data state
   const statuses = [
@@ -44,6 +49,8 @@ export function DataTableToolbar<TData>({
 
   // Ui logic State
   const [open, setOpen] = useState(false)
+  const [productNames, setProductNames] = useState([])
+  const [openProductFilter, setOpenProductFilter] = useState(false)
 
   // filter products by name function
   const filterOrdersByFilter = async (event: React.FormEvent) => {
@@ -53,8 +60,26 @@ export function DataTableToolbar<TData>({
       limit: 10,
       status: statusFilter,
       filter: multiFilter,
+      product: productFilter._id,
     })
   }
+
+  // Fetch products and set them in setProductFilter
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await axios.get(
+          'https://api.arelaclothsy.com/products/names'
+        )
+        const products = response.data
+        setProductNames(products)
+      } catch (error) {
+        console.error('Error fetching products:', error)
+      }
+    }
+
+    fetchProducts()
+  }, [])
 
   return (
     <div className='flex items-center justify-between'>
@@ -88,6 +113,7 @@ export function DataTableToolbar<TData>({
                     setOpen(false)
                     fetchOrders({
                       filter: multiFilter,
+                      product: productFilter._id,
                     })
                   }}
                 >
@@ -104,6 +130,7 @@ export function DataTableToolbar<TData>({
                       fetchOrders({
                         status: status,
                         filter: multiFilter,
+                        product: productFilter._id,
                       })
                     }}
                   >
@@ -112,6 +139,60 @@ export function DataTableToolbar<TData>({
                 ))}
               </CommandGroup>
             </Command>
+          </PopoverContent>
+        </Popover>
+        <Popover
+          open={openProductFilter}
+          onOpenChange={setOpenProductFilter}
+          modal={true}
+        >
+          <PopoverTrigger asChild>
+            <Button
+              variant='outline'
+              role='combobox'
+              aria-expanded={openProductFilter}
+              className='w-[200px] justify-between'
+            >
+              {productFilter.engName || 'Filter By Product...'}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className='h-[450px] w-[200px] overflow-y-auto p-0'>
+            <ScrollArea>
+              <Command>
+                <CommandGroup>
+                  <CommandItem
+                    onSelect={() => {
+                      setProductFilter({})
+                      setOpenProductFilter(false)
+                      fetchOrders({
+                        filter: multiFilter,
+                        product: productFilter._id,
+                      })
+                    }}
+                  >
+                    All
+                  </CommandItem>
+                </CommandGroup>
+                <CommandGroup>
+                  {productNames.map((product) => (
+                    <CommandItem
+                      key={product._id}
+                      onSelect={() => {
+                        setProductFilter(product)
+                        setOpenProductFilter(false)
+                        fetchOrders({
+                          status: status,
+                          filter: multiFilter,
+                          product: product._id,
+                        })
+                      }}
+                    >
+                      {product.engName}
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </Command>
+            </ScrollArea>
           </PopoverContent>
         </Popover>
       </div>

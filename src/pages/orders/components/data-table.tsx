@@ -57,6 +57,7 @@ export function DataTable<TData, TValue>({
 
   // category and name filter State inside data table toolbar
   const [statusFilter, setStatusFilter] = useState('')
+  const [productFilter, setProductFilter] = useState({})
   const [multiFilter, setMultiFilter] = useState('')
 
   const [sorting, setSorting] = React.useState<SortingState>([])
@@ -117,6 +118,8 @@ export function DataTable<TData, TValue>({
         statusFilter={statusFilter}
         setMultiFilter={setMultiFilter}
         multiFilter={multiFilter}
+        setProductFilter={setProductFilter}
+        productFilter={productFilter}
       />
       <div className='rounded-md border'>
         <Table>
@@ -199,6 +202,7 @@ export function DataTable<TData, TValue>({
         metadata={metadata}
         fetchOrders={fetchOrders}
         multiFilter={multiFilter}
+        productFilter={productFilter._id}
       />
     </div>
   )

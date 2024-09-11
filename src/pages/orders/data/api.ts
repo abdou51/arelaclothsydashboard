@@ -6,6 +6,7 @@ export interface FetchOrdersParams {
   limit?: number
   status?: string
   filter?: string
+  product?: string
 }
 
 export async function fetchOrders(params: FetchOrdersParams = {}): Promise<{
@@ -26,6 +27,9 @@ export async function fetchOrders(params: FetchOrdersParams = {}): Promise<{
     }
     if (params.filter) {
       queryParams.append('filter', params.filter.toString())
+    }
+    if (params.product) {
+      queryParams.append('product', params.product.toString())
     }
     const response = await fetch(
       `https://api.arelaclothsy.com/orders?${queryParams.toString()}`,

@@ -22,6 +22,7 @@ interface DataTablePaginationProps<TData> {
   metadata: OrderMetaData | null
   statusFilter?: string
   multiFilter?: string
+  productFilter?: string
   fetchOrders: (
     params: FetchOrdersParams
   ) => Promise<{ orders: TData[]; metadata: OrderMetaData }>
@@ -32,6 +33,7 @@ export function DataTablePagination<TData>({
   metadata,
   statusFilter,
   multiFilter,
+  productFilter,
   fetchOrders,
 }: DataTablePaginationProps<TData>) {
   const handlePageSizeChange = async (newPageSize: string) => {
@@ -41,6 +43,7 @@ export function DataTablePagination<TData>({
       page: 1,
       status: statusFilter,
       filter: multiFilter,
+      product: productFilter,
     })
   }
   return (
@@ -77,6 +80,7 @@ export function DataTablePagination<TData>({
                 page: 1,
                 status: statusFilter,
                 filter: multiFilter,
+                product: productFilter,
               })
             }
           >
@@ -91,6 +95,7 @@ export function DataTablePagination<TData>({
                 page: metadata?.prevPage,
                 status: statusFilter,
                 filter: multiFilter,
+                product: productFilter,
               })
             }
             disabled={!metadata?.hasPrevPage}
@@ -106,6 +111,7 @@ export function DataTablePagination<TData>({
                 page: metadata?.nextPage,
                 status: statusFilter,
                 filter: multiFilter,
+                product: productFilter,
               })
             }
             disabled={!metadata?.hasNextPage}
@@ -121,6 +127,7 @@ export function DataTablePagination<TData>({
                 page: metadata?.totalPages,
                 status: statusFilter,
                 filter: multiFilter,
+                product: productFilter,
               })
             }
           >
