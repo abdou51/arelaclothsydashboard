@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/components/custom/button'
 import { useToast } from '@/components/ui/use-toast'
 import { ReloadIcon } from '@radix-ui/react-icons'
+import { Textarea } from '@/components/ui/textarea'
 import {
   Table,
   TableBody,
@@ -64,6 +65,7 @@ export function DataTableRowActions<TData>({
   // Product State
   const order = orderSchema.parse(row.original)
   const [orderStatus, setOrderStatus] = useState(order.status)
+  const [adminNote, setAdminNote] = useState(order.adminNote || '')
 
   // Edit and Delete Dialogs States
   const [openEditDialog, setOpenEditDialog] = useState(false)
@@ -76,19 +78,23 @@ export function DataTableRowActions<TData>({
   useEffect(() => {
     if (!openEditDialog) {
       setOrderStatus(order.status)
+      setAdminNote(order.adminNote || '')
     }
   }, [openEditDialog, order])
   const handleEditCategory = async () => {
     try {
       setIsLoading(true)
-      if (orderStatus === order.status) {
+      if (
+        orderStatus === order.status &&
+        adminNote === (order.adminNote || '')
+      ) {
         setOpenEditDialog(false)
         setIsLoading(false)
         toast({
           variant: 'default',
           className: 'bg-green-500',
           title: 'Success',
-          description: 'Product Updated Successfully',
+          description: 'No changes were made.',
         })
         return
       }
@@ -98,6 +104,7 @@ export function DataTableRowActions<TData>({
         `https://api.arelaclothsy.com/orders/${order._id}`,
         {
           status: orderStatus,
+          adminNote: adminNote,
         },
         {
           headers: {
@@ -132,7 +139,7 @@ export function DataTableRowActions<TData>({
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Error deleting product. Please try again.',
+        description: 'Error updating order. Please try again.',
       })
     }
   }
@@ -217,6 +224,12 @@ export function DataTableRowActions<TData>({
               <Separator orientation='vertical' />
               <p className='col-span-2 text-sm'>{order.note}</p>
             </div>
+            <Separator />
+            <div className='grid grid-cols-5 items-center gap-4'>
+              <Label className='col-span-2 '>My Note</Label>
+              <Separator orientation='vertical' />
+              <p className='col-span-2 text-sm'>{order.adminNote}</p>
+            </div>
           </div>
           <DialogHeader>
             <DialogTitle>Product Details :</DialogTitle>
@@ -265,7 +278,7 @@ export function DataTableRowActions<TData>({
         <DialogContent className='sm:max-w-[450px]'>
           <DialogHeader>
             <DialogTitle>
-              Edit Order Status For order "{order.reference}"
+              Edit Order Status For customer : "{order.fullName}"
             </DialogTitle>
             <DialogDescription>
               Make changes to your profile here. Click save when you're done.
@@ -307,6 +320,20 @@ export function DataTableRowActions<TData>({
                     </Command>
                   </PopoverContent>
                 </Popover>
+              </div>
+            </div>
+            <div className='grid grid-cols-4 items-start gap-4'>
+              <Label htmlFor='adminNote' className='text-right'>
+                Admin Note
+              </Label>
+              <div className='col-span-3'>
+                <Textarea
+                  id='adminNote'
+                  value={adminNote}
+                  onChange={(e) => setAdminNote(e.target.value)}
+                  placeholder='Enter admin note here...'
+                  rows={4}
+                />
               </div>
             </div>
           </div>

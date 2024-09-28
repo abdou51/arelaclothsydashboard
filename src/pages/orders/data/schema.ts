@@ -19,6 +19,7 @@ export const orderItemSchema = z.object({
 export const orderSchema = z.object({
   _id: z.string(),
   note: z.string().optional(),
+  adminNote: z.string().optional(),
   shippingType: z.string(),
   shippingPrice: z.number().default(0),
   status: z.enum([
