@@ -268,7 +268,9 @@ export function DataTableRowActions<TData>({
               </TableRow>
               <TableRow>
                 <TableCell colSpan={4}>Total</TableCell>
-                <TableCell className='text-right'>{order.total} Dzd</TableCell>
+                <TableCell className='text-right'>
+                  {order.total + order.shippingPrice} Dzd
+                </TableCell>
               </TableRow>
             </TableFooter>
           </Table>
