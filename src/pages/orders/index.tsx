@@ -12,11 +12,22 @@ import { DataTableRowActions } from './components/data-table-row-actions'
 export default function OrderPage() {
   const columns: ColumnDef<Order>[] = [
     {
-      accessorKey: 'reference',
+      accessorKey: 'createdAt',
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title='Reference' />
+        <DataTableColumnHeader column={column} title='Date' />
       ),
-      cell: ({ row }) => <div>{row.getValue('reference')}</div>,
+      cell: ({ row }) => {
+        const createdAt = new Date(row.getValue('createdAt'))
+        const formattedDateTime = createdAt.toLocaleString('en-GB', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false, // 24-hour format
+        })
+        return <div>{formattedDateTime}</div>
+      },
       enableSorting: false,
     },
     {
